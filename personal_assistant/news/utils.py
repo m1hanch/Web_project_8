@@ -9,22 +9,22 @@ def get_news():
     html_content = response.text
     soup = BeautifulSoup(html_content, 'html.parser')
     video_player_image = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTQm42v1XDsudIs2WMM9yGupYi15ntu28Cg5w&usqp=CAU'
-    articles = soup.find_all('li', class_='lx-stream__post-container')
+    articles = soup.find_all('div', {'data-testid': 'alaska-grid'})[0]
     articles_list = []
     for article in articles:
-        title = article.find('h3', class_='lx-stream-post__header-title').text
-        source = article.find('h3', class_='lx-stream-post__header-title').find('a', class_='qa-heading-link')
+        title = article.find('h2', {'data-testid': 'card-headline'})
+        title = title.text if title else 'Title not found'
+        source = article.find('a', {'data-testid': 'internal-link'})
         if source is None:
             continue
         else:
             source = 'https://www.bbc.com/'+source['href']
-        img = article.find('img', class_='qa-srcset-image')
+        img = article.find('div', {'data-testid': 'card-media'}).find('img', class_='efFcac')
         img = img['src'] if img else video_player_image
-        description = article.find('p', class_='lx-stream-related-story--summary qa-story-summary')
-        description = description.text if description else article.find('p', class_='lx-media-asset-summary').text if article.find(
-            'p', class_='lx-media-asset-summary') else article.find('div', 'lx-stream-post-body').text if article.find(
-            'div', 'lx-stream-post-body') else ''
-        date = article.find('span', class_='qa-post-auto-meta').text
+        description = article.find('p', {'data-testid': 'card-description'})
+        description = description.text if description else ''
+        date = article.find('span', {'data-testid': 'card-metadata-lastupdated'})
+        date = date.text if date else ''
         article_data = {
             'title': title,
             'source': source,
@@ -37,20 +37,60 @@ def get_news():
     return articles_list
 
 
+def parse_articles(articles) -> list:
+    article_list = []
+    for article in articles:
+        source = article.find('a', {'data-testid': 'internal-link'})
+        if source is None:
+            continue
+        else:
+            source = 'https://www.bbc.com' + source['href']
+        title = article.find('h2', {'data-testid': 'card-headline'}).text
+        img = article.find('div', {'data-testid': 'card-media'}).find('img', class_='efFcac')['src']
+        published = article.find('span', {'data-testid': 'card-metadata-lastupdated'}).text
+        article_data = {
+            'title': title,
+            'source': source,
+            'img_link': img,
+            'date': published
+        }
+        article_list.append(article_data)
+    return article_list
+
+
 def get_tech_news(section: str):
+    url = f"https://www.bbc.com/{section}"
+    response = requests.get(url)
+    response.encoding = 'utf-8'
+    html_content = response.text
+    soup = BeautifulSoup(html_content, 'html.parser')
+    articles = soup.find_all('div', {'data-testid': 'nevada-grid-6'})[0]
+    articles_list = parse_articles(articles)
+
+    articles = soup.find_all('div', {'data-testid': 'nevada-grid-4'})[0]
+    articles_list.extend(parse_articles(articles))
+
+    articles = soup.find_all('div', {'data-testid': 'alaska-grid'})[0]
+    articles_list.extend(parse_articles(articles))
+
+    return articles_list
+
+
+def get_environment_news(section: str):
     url = f"https://www.bbc.com/news/{section}"
     response = requests.get(url)
     response.encoding = 'utf-8'
     html_content = response.text
     soup = BeautifulSoup(html_content, 'html.parser')
-    articles = soup.find_all('div', class_='ssrcss-10i168z-LinkPost')
+    articles = soup.find_all('ol', {'role': 'list'})[0]
     articles_list = []
 
-    for article in articles:
-        source = 'https://www.bbc.com/' + article.find('a', class_='ssrcss-9haqql-LinkPostLink')['href']
-        title = article.find('span', class_='ssrcss-1cm0vxx-LinkPostHeadline').text
+    for article in articles.find_all('li', class_='ssrcss-qtbdxl-StyledListItem e1d6xluq3'):
+        source = 'https://www.bbc.com/' + article.find('a', class_=lambda x: x and x.startswith('ssrcss-'))['href']
+        title = article.find('span', {'role': 'text'}).text
         img = article.find('img')['src']
-        published = article.find('span', class_='ssrcss-dyweam-Timestamp').text
+        published = article.find('span', class_='ssrcss-i6hqx6-Timestamp').text
+        published = published if published else article.find('span', class_='ssrcss-d8d0g-LivePulse ev7eeod2').text
         article_data = {
             'title': title,
             'source': source,

@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from .utils import get_news, get_tech_news, get_sport_news, get_politics_news
+from .utils import get_news, get_tech_news, get_sport_news, get_politics_news, get_environment_news
 
 
 # Create your views here.
@@ -9,12 +9,12 @@ def index(request):
 
 
 def tech_news(request):
-    news_objects = get_tech_news('technology')
+    news_objects = get_tech_news('innovation/technology')
     return render(request, 'news/news_sections.html', context={'news_objects': news_objects})
 
 
 def science_news(request):
-    news_objects = get_tech_news('science_and_environment')
+    news_objects = get_environment_news('science_and_environment')
     return render(request, 'news/news_sections.html', context={'news_objects': news_objects})
 
 

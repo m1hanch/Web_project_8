@@ -11,6 +11,8 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 import os
 from pathlib import Path
+
+import dj_database_url
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -26,8 +28,8 @@ SECRET_KEY = "django-insecure-db-1%w()0+_esb==_7uy=%6(hu&3gps&#4^po)$9e=tg8-ha7v
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
-
+ALLOWED_HOSTS = ["*", "https://*.fly.dev"]
+CSRF_TRUSTED_ORIGINS = ["https://*.fly.dev"]
 # Application definition
 
 INSTALLED_APPS = [
@@ -87,6 +89,7 @@ DATABASES = {
         'HOST': os.getenv('DATABASE_HOST'),
         'OPTIONS': {'sslmode': 'require'},
     }
+    # 'default': dj_database_url.config(default=os.getenv('DATABASE_URL'))
 }
 
 # Parameters for connecting to Amazon S3:
